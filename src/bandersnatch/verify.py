@@ -28,15 +28,20 @@ async def _get_latest_json(json_path, config, executor, delete_removed_packages,
     url = f"{url_parts.scheme}://{url_parts.netloc}/pypi/{json_path.name}/json"
     logger.debug(f"Updating {json_path.name} json from {url}")
     new_json_path = json_path.parent / f"{json_path.name}.new"
-    await url_fetch(url, new_json_path, executor, proxy=proxy)
-    if new_json_path.exists():
-        os.rename(new_json_path, json_path)
-    else:
-        logger.error(
-            f"{new_json_path.as_posix()} does not exist - Did not get new JSON metadata"
-        )
-        if delete_removed_packages:
-            os.unlink(json_path)
+    try:
+        await url_fetch(url, new_json_path, executor, proxy=proxy)
+        if new_json_path.exists():
+            os.rename(new_json_path, json_path)
+        else:
+            logger.error(
+                f"{new_json_path.as_posix()} does not exist - Did not get new JSON metadata"
+            )
+            if delete_removed_packages:
+                os.unlink(json_path)
+    except asyncio.TimeoutError:
+        # In connection timeouts, just skip over the file and continue.
+        # Might be better to have a number of retries, but for now just want to successfully complete a run.
+        pass
 
 
 def _sha256_checksum(filename, block_size=65536):
