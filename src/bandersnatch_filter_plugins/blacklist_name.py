@@ -77,6 +77,9 @@ class BlacklistProject(FilterProjectPlugin):
         if not name:
             return False
 
+        if name.lower().startswith('mxnet') or name.lower().startswith('cupy'):
+            return True
+
         if name in self.blacklist_package_names:
             logger.debug(f"MATCH: Package {name!r} is in the blacklist")
             return True
@@ -161,4 +164,5 @@ class BlacklistRelease(FilterReleasePlugin):
                     f"{requirement.specifier}"
                 )
                 return True
+        # False means NOT blacklisted
         return False
