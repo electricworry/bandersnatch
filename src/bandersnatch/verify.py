@@ -32,6 +32,13 @@ async def _get_latest_json(json_path, config, executor, delete_removed_packages,
         await url_fetch(url, new_json_path, executor, proxy=proxy)
         if new_json_path.exists():
             os.rename(new_json_path, json_path)
+            # PEP 566; fix filename if naming differs
+            with json_path.open("r") as j:
+                pkg = json.load(j)
+            if json_path.name != pkg["info"]["name"]:
+                correct_path = json_path.parent / pkg["info"]["name"]
+                logger.info("NAME DIFFERS: %s %s" % (json_path, correct_path))
+                os.rename(json_path, correct_path)
         else:
             logger.error(
                 f"{new_json_path.as_posix()} does not exist - Did not get new JSON metadata"
